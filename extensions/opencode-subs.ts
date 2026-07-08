@@ -762,7 +762,8 @@ export default function (pi: ExtensionAPI) {
           saveConfig(config);
           applyActiveWorkspace(config, ctx.modelRegistry);
           await refreshUsage(ctx);
-          ctx.ui.notify?.(`Added ${name} (${Object.keys(workspaces).length} workspace${Object.keys(workspaces).length === 1 ? "" : "s"})`, "info");
+          const _msg = `Added ${name} (${Object.keys(workspaces).length} workspace${Object.keys(workspaces).length === 1 ? "" : "s"})`;
+          ctx.ui.notify?.(_msg, "info");
           break;
         }
 
@@ -771,7 +772,8 @@ export default function (pi: ExtensionAPI) {
           const name = parts[1];
           const workspaces = getWorkspaces(config);
           if (!name || !workspaces[name]) {
-            ctx.ui.notify?.(`Unknown workspace. Available: ${Object.keys(workspaces).join(", ")}", "warning");
+            const _msg = `Unknown workspace. Available: ${Object.keys(workspaces).join(", ")}`;
+          ctx.ui.notify?.(_msg, "warning");
             return;
           }
           delete workspaces[name];
@@ -788,7 +790,8 @@ export default function (pi: ExtensionAPI) {
           }
           saveConfig(config);
           await refreshUsage(ctx);
-          ctx.ui.notify?.(`Removed ${name} (${names.length} left)`, "info");
+          const _msg = `Removed ${name} (${names.length} left)`;
+          ctx.ui.notify?.(_msg, "info");
           break;
         }
 
