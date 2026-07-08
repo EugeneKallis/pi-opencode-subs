@@ -1,0 +1,14 @@
+{
+  "name": "pi-opencode-subs",
+  "version": "1.0.0",
+  "description": "Pi extension for managing OpenCode Go subscription workspaces — switch, rotate, and monitor usage bars",
+  "keywords": ["pi-package", "opencode", "opencode-go", "subscription"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "pi": {
+    "extensions": ["./extensions"]
+  }
+}
