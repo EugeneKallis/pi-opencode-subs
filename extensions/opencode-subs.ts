@@ -378,6 +378,8 @@ function renderBarSegment(theme: any, pct: number, slots: number): string {
   const color = colorForPercent(v);
   const fg = theme.getFgAnsi(color);
   const bg = fgToBgAnsi(fg);
+  // Use black text on colored background for contrast
+  const labelColor = `\x1b[38;5;0m`;
 
   if (v === 0) {
     return theme.fg(color, label) + theme.fg("dim", "░".repeat(Math.max(0, slots - label.length)));
@@ -391,6 +393,7 @@ function renderBarSegment(theme: any, pct: number, slots: number): string {
   return (
     theme.fg(color, "█".repeat(before)) +
     bg +
+    labelColor +
     theme.bold(label) +
     "\x1b[39m\x1b[49m" +
     theme.fg(color, "█".repeat(after)) +
