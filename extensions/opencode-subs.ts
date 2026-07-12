@@ -546,30 +546,22 @@ export default function (pi: ExtensionAPI) {
             }
           }
 
-          // Bars
+          // Stats line (left-aligned stats + right-aligned model)
           const statsVisible = visibleWidth(statsLeft);
           const modelVisible = visibleWidth(rightSide);
           const minGap = 2;
-          let barSpace = width - statsVisible - modelVisible - minGap * 2;
-          const active = getActiveName(config);
-          let bars = "";
-          if (active && barSpace >= 20) {
-            bars = renderFooterBars(theme, active, currentUsage, barSpace);
-          }
-          const barsVisible = visibleWidth(stripAnsi(bars));
-
-          let statsLine: string;
-          if (barsVisible > 0) {
-            const gapLeft = Math.max(minGap, Math.floor((width - statsVisible - barsVisible - modelVisible) / 2));
-            const gapRight = width - statsVisible - barsVisible - modelVisible - gapLeft;
-            statsLine = statsLeft + " ".repeat(gapLeft) + bars + " ".repeat(gapRight) + rightSide;
-          } else {
-            const pad = " ".repeat(Math.max(minGap, width - statsVisible - modelVisible));
-            statsLine = statsLeft + pad + rightSide;
-          }
+          const pad = " ".repeat(Math.max(minGap, width - statsVisible - modelVisible));
+          const statsLine = statsLeft + pad + rightSide;
           const statsLineStyled = theme.fg("dim", statsLeft) + statsLine.slice(statsLeft.length);
 
           const lines = [pwdLine, statsLineStyled];
+
+          // ── Bars line (dedicated row) ────────────────────────────────────
+          const active = getActiveName(config);
+          if (active) {
+            const bars = renderFooterBars(theme, active, currentUsage, width);
+            if (bars) lines.push(bars);
+          }
 
           // ── Line 3: extension statuses ───────────────────────────────────
           const extensionStatuses = footerData.getExtensionStatuses();
