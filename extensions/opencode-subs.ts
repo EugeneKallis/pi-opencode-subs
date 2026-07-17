@@ -357,6 +357,109 @@ function formatDetail(name: string, ws: Workspace, data: UsageData | null): stri
   ].join("\n");
 }
 
+// ─── Model compare ──────────────────────────────────────────────────────────
+
+interface CompareRow {
+  id: string;
+  name: string;
+  cost: { input: number; output: number; cacheRead: number; cacheWrite: number };
+  contextWindow: number;
+  maxTokens: number;
+  reasoning: boolean;
+  input: ("text" | "image")[];
+}
+
+// Hand-written per model. Falls back to heuristicCompare() for unknown models.
+const SUGGESTED_USE: Record<string, string> = {
+  "minimax-m3": "workhorse — cheap reasoning, vision + 512K ctx",
+  "deepseek-v4-flash": "budget reasoning — 1M ctx for pennies",
+  "mimo-v2.5": "budget vision + reasoning — same price, adds image input",
+  "minimax-m2.7": "mid-tier general purpose — cheaper than GLM, text-only",
+  "qwen3.7-plus": "vision via Anthropic API — 1M ctx, prompt caching",
+  "qwen3.6-plus": "long-context multimodal — 1M ctx, vision, caching",
+  "kimi-k2.6": "vision + reasoning — Moonshot Kim, multimodal generalist",
+  "kimi-k2.7-code": "coding & agentic — vision in, 262K output",
+  "glm-5.1": "multilingual — 200K ctx, mid-tier pricing",
+  "glm-5.2": "long-context — 1M ctx at mid-tier price",
+  "deepseek-v4-pro": "hard reasoning — 1M ctx at premium price",
+  "mimo-v2.5-pro": "premium reasoning — 1M ctx, vision-capable",
+  "qwen3.7-max": "frontier — most expensive, hardest problems",
+};
+
+function heuristicCompare(m: CompareRow): string {
+  const tags: string[] = [];
+  if (m.id.includes("code") || m.id.includes("coder")) tags.push("coding");
+  if (m.input.includes("image")) tags.push("vision");
+  if (m.reasoning) tags.push("reasoning");
+  if (m.contextWindow >= 1_000_000) tags.push("1M ctx");
+  else if (m.contextWindow >= 500_000) tags.push("long ctx");
+
+  let tier: string;
+  if (m.cost.input <= 0.15) tier = "budget";
+  else if (m.cost.input >= 1.5) tier = "premium";
+  else tier = "mid-tier";
+
+  return tags.length === 0 ? `${tier} general` : `${tier} ${tags.join("+")}`;
+}
+
+function fmtPrice(n: number): string {
+  if (n === 0) return "—";
+  if (n < 0.01) return `$${n.toFixed(4)}`;
+  if (n < 1) return `$${n.toFixed(2)}`;
+  return `$${n.toFixed(2)}`;
+}
+
+function fmtCtxShort(n: number): string {
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return String(n);
+}
+
+function pad(s: string, w: number): string {
+  return s.length >= w ? s : s + " ".repeat(w - s.length);
+}
+
+function formatCompareTable(models: CompareRow[]): string {
+  // Column headers
+  const headers = ["Model", "In $/M", "Out $/M", "Ctx", "MaxOut", "Caps", "Best For"];
+  const rows = models.map((m) => {
+    const caps = [
+      m.input.includes("image") ? "👁" : "",
+      m.reasoning ? "🧠" : "",
+    ].filter(Boolean).join("") || "—";
+    const use = SUGGESTED_USE[m.id] ?? heuristicCompare(m);
+    return [
+      m.name,
+      fmtPrice(m.cost.input),
+      fmtPrice(m.cost.output),
+      fmtCtxShort(m.contextWindow),
+      fmtCtxShort(m.maxTokens),
+      caps,
+      use,
+    ];
+  });
+
+  // Measure column widths
+  const allRows = [headers, ...rows];
+  const widths = headers.map((_, ci) =>
+    Math.max(...allRows.map((r) => (r[ci] ?? "").length))
+  );
+
+  const fmt = (row: string[]) =>
+    row.map((cell, i) => pad(cell, widths[i])).join("  ");
+
+  const sep = widths.map((w) => "─".repeat(w)).join("──");
+
+  return [
+    fmt(headers),
+    sep,
+    ...rows.map((r) => fmt(r)),
+  ].join("\n");
+}
+
 // ─── Footer bars ────────────────────────────────────────────────────────────
 
 interface Win {
@@ -672,7 +775,7 @@ export default function (pi: ExtensionAPI) {
   // ─── /go-subs command ────────────────────────────────────────────────────────
 
   pi.registerCommand("go-subs", {
-    description: "Manage OpenCode Go subs: status | use <name> | next/rotate | add <name> <id> <key> [cookie] | rm <name> | setup",
+    description: "Manage OpenCode Go subs: status | use <name> | next/rotate | add <name> <id> <key> [cookie] | rm <name> | compare [input|output|name] | setup",
     handler: async (args, ctx) => {
       config = loadConfig();
       const parts = args.trim().split(/\s+/).filter(Boolean);
@@ -800,9 +903,50 @@ export default function (pi: ExtensionAPI) {
           break;
         }
 
+        case "compare":
+        case "models": {
+          const sortBy = parts[1] || "input"; // input | output | name
+          const all = ctx.modelRegistry.getAll();
+          const models = all
+            .filter((m) => m.provider === PROVIDER)
+            .map((m): CompareRow => ({
+              id: m.id,
+              name: m.name,
+              cost: m.cost,
+              contextWindow: m.contextWindow,
+              maxTokens: m.maxTokens,
+              reasoning: m.reasoning,
+              input: m.input as ("text" | "image")[],
+            }));
+
+          if (models.length === 0) {
+            ctx.ui.notify?.("No opencode-go models found in registry.", "warning");
+            return;
+          }
+
+          if (sortBy === "output") {
+            models.sort((a, b) => b.cost.output - a.cost.output);
+          } else if (sortBy === "name") {
+            models.sort((a, b) => a.name.localeCompare(b.name));
+          } else {
+            models.sort((a, b) => a.cost.input - b.cost.input);
+          }
+
+          const sortLabel = sortBy === "output" ? "output price desc"
+            : sortBy === "name" ? "name"
+            : "input price asc";
+
+          const table = formatCompareTable(models);
+          ctx.ui.notify?.(
+            `${models.length} opencode-go models · sorted by ${sortLabel}\n\n${table}`,
+            "info",
+          );
+          break;
+        }
+
         default: {
           ctx.ui.notify?.(
-            "Usage: /go-subs [status|use <name>|next|rotate|add <name> <workspace_id> <api_key> [cookie]|rm <name>|setup]",
+            "Usage: /go-subs [status|use <name>|next|rotate|add <name> <workspace_id> <api_key> [cookie]|rm <name>|compare [input|output|name]|setup]",
             "info",
           );
         }
