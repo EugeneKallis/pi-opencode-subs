@@ -113,11 +113,11 @@ function applyActiveWorkspace(
   const workspaces = getWorkspaces(config);
   const active = getActiveName(config);
   if (!active) {
-    modelRegistry.authStorage.removeRuntimeApiKey(PROVIDER);
+    modelRegistry.registerProvider(PROVIDER, { apiKey: "" });
     return undefined;
   }
   const ws = workspaces[active];
-  modelRegistry.authStorage.setRuntimeApiKey(PROVIDER, ws.workspace_api_key);
+  modelRegistry.registerProvider(PROVIDER, { apiKey: ws.workspace_api_key });
   return active;
 }
 
@@ -779,7 +779,7 @@ export default function (pi: ExtensionAPI) {
           }
           if (names.length === 0) {
             delete config._active;
-            ctx.modelRegistry.authStorage.removeRuntimeApiKey(PROVIDER);
+            ctx.modelRegistry.registerProvider(PROVIDER, { apiKey: "" });
           } else {
             applyActiveWorkspace(config, ctx.modelRegistry);
           }
