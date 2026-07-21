@@ -113,11 +113,11 @@ function applyActiveWorkspace(
   const workspaces = getWorkspaces(config);
   const active = getActiveName(config);
   if (!active) {
-    modelRegistry.registerProvider(PROVIDER, { apiKey: "" });
+    modelRegistry?.registerProvider(PROVIDER, { apiKey: "" });
     return undefined;
   }
   const ws = workspaces[active];
-  modelRegistry.registerProvider(PROVIDER, { apiKey: ws.workspace_api_key });
+  modelRegistry?.registerProvider(PROVIDER, { apiKey: ws.workspace_api_key });
   return active;
 }
 
@@ -882,7 +882,7 @@ export default function (pi: ExtensionAPI) {
           }
           if (names.length === 0) {
             delete config._active;
-            ctx.modelRegistry.registerProvider(PROVIDER, { apiKey: "" });
+            ctx.modelRegistry?.registerProvider(PROVIDER, { apiKey: "" });
           } else {
             applyActiveWorkspace(config, ctx.modelRegistry);
           }
@@ -906,7 +906,7 @@ export default function (pi: ExtensionAPI) {
         case "compare":
         case "models": {
           const sortBy = parts[1] || "input"; // input | output | name
-          const all = ctx.modelRegistry.getAll();
+          const all = ctx.modelRegistry?.getAll() ?? [];
           const models = all
             .filter((m) => m.provider === PROVIDER)
             .map((m): CompareRow => ({
