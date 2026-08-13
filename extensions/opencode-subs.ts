@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { normalizeApiUsage, type UsageData, type UsageWindow } from "./usage.ts";
 
 const PROVIDER = "opencode-go";
 const CONFIG_PATH = join(homedir(), ".pi", "agent", "opencode-subs.json");
@@ -29,24 +30,6 @@ export interface Workspace {
 interface SubsConfig {
   _active?: string;
   [name: string]: Workspace | string | undefined;
-}
-
-interface UsageWindow {
-  usagePercent: number;
-  resetInSec: number;
-  usageDollars?: number;
-  limitDollars?: number;
-}
-
-interface UsageData {
-  rolling: UsageWindow | null;
-  weekly: UsageWindow | null;
-  monthly: UsageWindow | null;
-  source?: "api" | "scrape";
-  error?: string;
-  stale?: boolean;
-  warning?: string;
-  fetchedAt?: number;
 }
 
 // ─── Config helpers ─────────────────────────────────────────────────────────
@@ -146,30 +129,6 @@ async function fetchWithTimeout(
   } finally {
     clearTimeout(timer);
   }
-}
-
-function normalizeApiUsage(raw: unknown): UsageData {
-  const cast = raw as Record<string, any> | null | undefined;
-  const pick = (key: string): UsageWindow | null => {
-    const w = cast?.[key];
-    if (!w || typeof w !== "object") return null;
-    const pct = Number(w.usagePercent);
-    const rst = Number(w.resetInSec);
-    if (!Number.isFinite(pct) || !Number.isFinite(rst)) return null;
-    return {
-      usagePercent: pct,
-      resetInSec: Math.max(0, Math.floor(rst)),
-      usageDollars: Number.isFinite(Number(w.usageDollars)) ? Number(w.usageDollars) : undefined,
-      limitDollars: Number.isFinite(Number(w.limitDollars)) ? Number(w.limitDollars) : undefined,
-    };
-  };
-  return {
-    rolling: pick("rolling5h"),
-    weekly: pick("weekly"),
-    monthly: pick("monthly"),
-    source: "api",
-    fetchedAt: Date.now(),
-  };
 }
 
 async function fetchUsageApi(apiKey: string): Promise<UsageData | null> {
