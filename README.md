@@ -18,11 +18,11 @@ pi install /path/to/pi-opencode-subs
 
 ## Setup
 
-Each OpenCode Go subscription has its own workspace ID + API key. Add them via the `/go-subs` command:
+Each OpenCode Go subscription has its own workspace ID + API key. Add them via the `/gosubs` command:
 
 ```bash
-/go-subs add personal wrk_xxx sk-xxx [auth_cookie]
-/go-subs add backup wrk_yyy sk-yyy [auth_cookie]
+/gosubs add personal wrk_xxx sk-xxx [auth_cookie]
+/gosubs add backup wrk_yyy sk-yyy [auth_cookie]
 ```
 
 Or edit the config file directly:
@@ -44,12 +44,12 @@ vim ~/.pi/agent/opencode-subs.json
 
 | Command | Description |
 |---------|-------------|
-| `/go-subs` / `/go-subs status` | List all workspaces + show active usage bars |
-| `/go-subs use <name>` | Switch to a specific workspace |
-| `/go-subs next` / `/go-subs rotate` | Cycle to the next workspace |
-| `/go-subs add <name> <id> <key> [cookie]` | Add a new workspace |
-| `/go-subs rm <name>` | Remove a workspace |
-| `/go-subs setup` | Create/verify the config file |
+| `/gosubs` / `/gosubs status` | List all workspaces + show active usage bars |
+| `/gosubs use <name>` | Switch to a specific workspace |
+| `/gosubs next` / `/gosubs rotate` | Cycle to the next workspace |
+| `/gosubs add <name> <id> <key> [cookie]` | Add a new workspace |
+| `/gosubs rm <name>` | Remove a workspace |
+| `/gosubs setup` | Create/verify the config file |
 
 ### Auto-features
 

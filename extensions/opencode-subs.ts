@@ -677,7 +677,7 @@ export default function (pi: ExtensionAPI) {
         startPolling(ctx);
       }
     } else if (isGoModel(ctx.model)) {
-      ctx.ui.notify?.("OpenCode subs: no workspaces configured. Use /go-subs add", "warning");
+      ctx.ui.notify?.("OpenCode subs: no workspaces configured. Use /gosubs add", "warning");
     }
   });
 
@@ -731,9 +731,9 @@ export default function (pi: ExtensionAPI) {
     clearFooter(ctx);
   });
 
-  // ─── /go-subs command ────────────────────────────────────────────────────────
+  // ─── /gosubs command ────────────────────────────────────────────────────────
 
-  pi.registerCommand("go-subs", {
+  pi.registerCommand("gosubs", {
     description: "Manage OpenCode Go subs: status | use <name> | next/rotate | add <name> <id> <key> [cookie] | rm <name> | compare [input|output|name] | setup",
     handler: async (args, ctx) => {
       config = loadConfig();
@@ -748,7 +748,7 @@ export default function (pi: ExtensionAPI) {
           const names = Object.keys(workspaces);
           const active = getActiveName(config);
           if (names.length === 0) {
-            ctx.ui.notify?.("No subs configured. Use /go-subs add <name> <workspace_id> <api_key> [cookie]", "warning");
+            ctx.ui.notify?.("No subs configured. Use /gosubs add <name> <workspace_id> <api_key> [cookie]", "warning");
             return;
           }
           const lines = names.map((name) => {
@@ -784,7 +784,7 @@ export default function (pi: ExtensionAPI) {
         case "rotate": {
           const workspaces = getWorkspaces(config);
           if (Object.keys(workspaces).length === 0) {
-            ctx.ui.notify?.("No subs configured. Use /go-subs add", "warning");
+            ctx.ui.notify?.("No subs configured. Use /gosubs add", "warning");
             return;
           }
           const next = rotateToNextWorkspace(config);
@@ -801,7 +801,7 @@ export default function (pi: ExtensionAPI) {
           const apiKey = parts[3];
           const authCookie = parts[4];
           if (!name || !workspaceId || !apiKey) {
-            ctx.ui.notify?.("Usage: /go-subs add <name> <workspace_id> <api_key> [auth_cookie]", "warning");
+            ctx.ui.notify?.("Usage: /gosubs add <name> <workspace_id> <api_key> [auth_cookie]", "warning");
             return;
           }
           if (name.startsWith("_")) {
@@ -858,7 +858,7 @@ export default function (pi: ExtensionAPI) {
           if (!existsSync(CONFIG_PATH)) {
             writeFileSync(CONFIG_PATH, "{}\n", { mode: 0o600 });
           }
-          ctx.ui.notify?.(`OpenCode subs config created/verified at:\n${CONFIG_PATH}\n\nEdit it to add workspaces, then run /go-subs status.`, "info");
+          ctx.ui.notify?.(`OpenCode subs config created/verified at:\n${CONFIG_PATH}\n\nEdit it to add workspaces, then run /gosubs status.`, "info");
           break;
         }
 
@@ -905,7 +905,7 @@ export default function (pi: ExtensionAPI) {
 
         default: {
           ctx.ui.notify?.(
-            "Usage: /go-subs [status|use <name>|next|rotate|add <name> <workspace_id> <api_key> [cookie]|rm <name>|compare [input|output|name]|setup]",
+            "Usage: /gosubs [status|use <name>|next|rotate|add <name> <workspace_id> <api_key> [cookie]|rm <name>|compare [input|output|name]|setup]",
             "info",
           );
         }
