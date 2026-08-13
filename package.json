@@ -12,6 +12,6 @@
     "@earendil-works/pi-tui": "*"
   },
   "pi": {
-    "extensions": ["./extensions"]
+    "extensions": ["./extensions/opencode-subs.ts"]
   }
 }
